@@ -6,6 +6,11 @@ import json
 
 
 class Combination:
+    """
+    This class takes in a series of normalized scores and assigns each score a value depending on the num_bins.
+    State length is determined by the length of series, and the number of attributes is determined by num_bins - 1.
+    TODO: make this work for num_bins >= 11 by overriding comparator and equals
+    """
     def __init__(self, series: pd.Series, num_bins: int = 4):
         # key = {np.linspace(-100, 100, num=num_bins)[i]: i for i in range(num_bins)}
         thresholds = pd.Series(np.linspace(-100, 100, num=num_bins))
@@ -20,6 +25,14 @@ def transition_fn_by_prob(year_horizon: int = 2015,
                           col: str = 'Open_adjusted',
                           days: int = 3
                           ) -> []:
+    """
+    This function returns a transition probability matrix based on the frequency of past transitions.
+
+    year_horizon: earliest year to include in assessment of transition history
+    path: path to csv file containing numeric values
+    col: string name of column within the csv located at path that contains the desired values
+    days: number of days included in each state; aka "state length"
+    """
     year_horizon = datetime.datetime(year_horizon, 1, 1)
     df = pd.read_csv(path)
     df['Date'] = pd.to_datetime(df['Date'])
@@ -28,7 +41,6 @@ def transition_fn_by_prob(year_horizon: int = 2015,
     combos = []
     for i in range(len(df)-days):
         data_series = pd.Series(df[col][i:i+days])
-        # print(data_series)
         state = get_state.get_state_by_percentile(data_series=data_series, state_width=1, min=data_series.min(),
                                                   max=data_series.max())
         combination = Combination(state)
@@ -37,7 +49,6 @@ def transition_fn_by_prob(year_horizon: int = 2015,
             result_dict[str(combination)] = 1
         else:
             result_dict[str(combination)] += 1
-        # print(state)
     # result_dict[combination] is the total number of occurrences of combination
     # row of probabilities that you enter each other probability
     result = {}
